@@ -9,6 +9,8 @@ sesiones por bloques dentro de ciclos repetidos (hasta 7 ciclos de repetición).
 Cada puzzle tiene un bando a resolver y una solución; los movimientos del usuario se
 validan contra esa solución y el rival responde automáticamente con la jugada siguiente.
 
+<img width="894" height="756" alt="image" src="https://github.com/user-attachments/assets/6ceabb3e-11ba-4978-9eb3-57e1af5d2730" />
+
 ## Requisitos
 
 - Python 3.10+
