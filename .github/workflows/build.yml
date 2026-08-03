@@ -1,0 +1,107 @@
+name: Build releases
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Windows .exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller python-chess "PySide6>=6.6,<6.10"
+
+      - name: Build executable
+        run: >
+          pyinstaller --noconfirm --onefile --windowed
+          --icon packaging/icon.ico
+          --name ChessPractice
+          --add-data "data/exercises.json;data"
+          app/main.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ChessPractice-windows
+          path: dist/ChessPractice.exe
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ChessPractice.exe
+
+  build-linux:
+    name: Linux AppImage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller python-chess "PySide6>=6.6,<6.10"
+
+      - name: Build onedir bundle
+        run: >
+          pyinstaller --noconfirm --onedir --windowed
+          --name ChessPractice
+          --add-data "data/exercises.json:data"
+          app/main.py
+
+      - name: Assemble AppDir
+        run: |
+          set -e
+          mkdir -p AppDir/usr/bin \
+                   AppDir/usr/share/applications \
+                   AppDir/usr/share/icons/hicolor/256x256/apps
+          cp -r dist/ChessPractice AppDir/usr/bin/ChessPractice
+          cp packaging/icon.png AppDir/usr/share/icons/hicolor/256x256/apps/chess-practice.png
+          cat > AppDir/usr/share/applications/chess-practice.desktop <<'EOF'
+          [Desktop Entry]
+          Name=Chess-Practice
+          Comment=Entrenamiento tactico de ajedrez (Metodo Chess-Practice)
+          Exec=ChessPractice
+          Icon=chess-practice
+          Terminal=false
+          Type=Application
+          Categories=Game;BoardGame;Qt;
+          EOF
+          cat > AppDir/AppRun <<'EOF'
+          #!/bin/sh
+          APP="$(dirname "$0")/usr/bin/ChessPractice/ChessPractice"
+          exec "$APP" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+
+      - name: Build AppImage
+        run: |
+          set -e
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O /tmp/appimagetool
+          chmod +x /tmp/appimagetool
+          ARCH=x86_64 /tmp/appimagetool --appimage-extract-and-run AppDir dist/ChessPractice-x86_64.AppImage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ChessPractice-linux
+          path: dist/ChessPractice-x86_64.AppImage
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ChessPractice-x86_64.AppImage

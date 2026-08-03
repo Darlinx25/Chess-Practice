@@ -1,0 +1,23 @@
+[project]
+name = "chess-practice"
+version = "0.1.0"
+description = "Entrenamiento táctico de ajedrez (Chess-Practice, PySide6)"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.10"
+dependencies = [
+    "python-chess>=1.10",
+    "PySide6>=6.6,<6.10",
+]
+
+[project.optional-dependencies]
+build = [
+    "pyinstaller>=6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
